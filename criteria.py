@@ -1,0 +1,2 @@
+# termination criteria
+CRITERIA = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
