@@ -6,7 +6,7 @@ from criteria import CRITERIA
 # termination criteria
 #criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+# prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0) in the checker board
 objp = np.zeros((6*7,3), np.float32)
 objp[:,:2] = np.mgrid[0:7,0:6].T.reshape(-1,2)
 
@@ -18,15 +18,20 @@ images = glob.glob('*.jpg')
 
 class InternalCalibration:
 
-    """Describe the function"""
+    """Describe the Class and its functions"""
 
     def __init__(self, objpoints:list, imgpoints:list, path):
         self.objpoints = objpoints
         self.imgpoints = imgpoints
         self.path = path
+        self.images = glob.glob(path+"*.jpg")
+        self.mtx = None
+        self.dist = None
+        self.rvecs = None
+        self.tvecs = None
 
-    def findCorners(self):
-        for fname in images:
+    def findcorners(self):
+        for fname in self.images:
             img = cv.imread(fname)
             gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
@@ -36,7 +41,7 @@ class InternalCalibration:
             # If found, add object points, image points (after refining them)
 
             if ret ==True:
-                objpoints.append(objp)
+                objpoints.append(self.objpoints)
                 corners2 = cv.cornerSubPix(gray,corners, (11,11), (-1,-1), CRITERIA)
                 imgpoints.append(corners2)
                 # Draw and display the corners
@@ -46,28 +51,32 @@ class InternalCalibration:
 
     cv.destroyAllWindows()
 
-    def calibrateCamera(self):
+    def calibratecamera(self):
         ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
         return ret, mtx, dist, rvecs, tvecs
 
-# undistort
-dst = cv.undistort(img, mtx, dist, None, newcameramtx)
-# crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
-cv.imwrite('calibresult.png', dst)
+    def unDistortimage(self):
+        dst = cv.undistort(img, mtx, dist, None, newcameramtx)
+        # crop the image
+        x, y, w, h = roi
+        dst = dst[y:y+h, x:x+w]
+        cv.imwrite('calibresult.png', dst)
 
-# undistort
-mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), 5)
-dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
-# crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
-cv.imwrite('calibresult.png', dst)
 
-mean_error = 0
-for i in range(len(objpoints)):
-    imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
-    error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
-    mean_error += error
-print( "total error: {}".format(mean_error/len(objpoints)) )
+    def undistortorrection(self):
+
+        # undistort
+        mapx, mapy = cv.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w,h), 5)
+        dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
+        # crop the image
+        x, y, w, h = roi
+        dst = dst[y:y+h, x:x+w]
+        cv.imwrite('calibresult.png', dst)
+
+    def calcmeanerror(self):
+        mean_error = 0
+        for i in range(len(objpoints)):
+            imgpoints2, _ = cv.projectPoints(objpoints[i], rvecs[i], tvecs[i], mtx, dist)
+            error = cv.norm(imgpoints[i], imgpoints2, cv.NORM_L2)/len(imgpoints2)
+            mean_error += error
+        print( "total error: {}".format(mean_error/len(objpoints)) )
