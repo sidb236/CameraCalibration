@@ -48,8 +48,7 @@ class InternalCalibration:
                 cv.drawChessboardCorners(img, (7,6), corners2, ret)
                 cv.imshow('img', img)
                 cv.waitKey(500)
-
-    cv.destroyAllWindows()
+        cv.destroyAllWindows()
 
     def calibratecamera(self):
         ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
